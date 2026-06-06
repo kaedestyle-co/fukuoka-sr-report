@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>福岡SR 問い合わせ分析 4・5月</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "Noto Sans JP","Hiragino Sans",sans-serif; background:#f0f4f8; color:#1a202c; padding:24px 20px; }
+
+  .page-title { font-size:22px; font-weight:700; margin-bottom:4px; }
+  .page-sub { font-size:13px; color:#718096; margin-bottom:20px; }
+
+  /* タブ */
+  .tab-bar { display:flex; gap:8px; margin-bottom:20px; flex-wrap:wrap; }
+  .tab-btn {
+    padding:10px 24px; border-radius:8px; border:2px solid #e2e8f0;
+    background:white; font-size:14px; font-weight:600; cursor:pointer;
+    color:#718096; transition:all 0.15s;
+  }
+  .tab-btn:hover { border-color:#eb6112; color:#eb6112; }
+  .tab-btn.active { background:#eb6112; border-color:#eb6112; color:white; }
+  .tab-content { display:none; }
+  .tab-content.active { display:block; }
+
+  /* セクション */
+  .section { background:white; border-radius:12px; padding:24px; margin-bottom:20px; box-shadow:0 1px 4px rgba(0,0,0,0.08); }
+  .section-title { font-size:15px; font-weight:700; color:#2d3748; margin-bottom:16px; padding-bottom:8px; border-bottom:2px solid #eb6112; display:flex; align-items:center; gap:8px; }
+  .section-title .num { background:#eb6112; color:white; border-radius:50%; width:22px; height:22px; font-size:12px; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; }
+
+  /* テーブル */
+  .table-wrap { overflow-x:auto; }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th { background:#f7fafc; color:#4a5568; font-weight:600; padding:4px 6px; text-align:center; border:1px solid #e2e8f0; font-size:11px; white-space:nowrap; }
+  td { padding:4px 6px; border:1px solid #e2e8f0; text-align:center; font-size:13px; }
+  td.label { text-align:left; font-weight:600; background:#f7fafc; color:#4a5568; white-space:nowrap; }
+  .highlight-row td { background:#fffaf0; }
+  .total-row td { background:#edf2f7; font-weight:700; }
+  .cancel-row td { background:#fff5f5; }
+
+  .rate { font-weight:700; }
+  .rate-high { color:#2f855a; }
+  .rate-mid  { color:#c05621; }
+  .rate-low  { color:#c53030; }
+  .rate-zero { color:#c53030; font-weight:700; }
+
+  .insight-box { background:#fffaf0; border-left:4px solid #eb6112; padding:12px 16px; border-radius:0 8px 8px 0; margin-top:16px; font-size:13px; line-height:1.7; }
+  .insight-box .insight-title { font-weight:700; color:#c05621; margin-bottom:6px; }
+
+  /* ドロップダウン */
+  details { display:inline-block; }
+  summary { cursor:pointer; display:inline-flex; align-items:center; gap:4px; font-weight:700; color:#2b6cb0; background:#ebf8ff; border:1px solid #bee3f8; border-radius:6px; padding:3px 10px; font-size:13px; list-style:none; transition:background 0.15s; user-select:none; }
+  summary::-webkit-details-marker { display:none; }
+  summary:hover { background:#bee3f8; }
+  summary::after { content:" ▾"; font-size:10px; color:#4299e1; }
+  details[open] summary::after { content:" ▴"; }
+  .name-list { position:fixed; background:white; border:1px solid #e2e8f0; border-radius:8px; padding:8px 0; box-shadow:0 4px 16px rgba(0,0,0,0.15); z-index:9999; min-width:180px; text-align:left; display:none; }
+  .name-list.visible { display:block; }
+  .name-list li { padding:5px 14px; font-size:13px; color:#2d3748; list-style:none; border-bottom:1px solid #f7fafc; white-space:nowrap; }
+  .name-list li:last-child { border-bottom:none; }
+  .name-list li.cancel-item { color:#c53030; }
+  .name-list li.cancel-item::before { content:"✗ "; }
+  .name-list li.plan-item { color:#2f855a; }
+  .name-list li.plan-item::before { content:"○ "; }
+
+  .pending-note { font-size:12px; color:#a0aec0; font-style:italic; }
+  .table-wrap.s2 table th:nth-child(n+8),
+  .table-wrap.s2 table td:nth-child(n+8) { background:#d6e4f7; }
+  .table-wrap.s2 table .total-row td:nth-child(n+8) { background:#b8cfe8; }
+  .table-wrap.s2 table thead tr:first-child th:nth-child(4) { background:#d6e4f7; }
+  .table-wrap.s2 table th:nth-child(1),
+  .table-wrap.s2 table td:nth-child(1) { background:#f0f0f0; font-weight:600; }
+
+  /* カレンダー */
+  .cal-months { display:flex; gap:16px; flex-wrap:wrap; }
+  .cal-month { flex:1; min-width:260px; }
+  .cal-month-title { font-size:13px; font-weight:700; color:#2d3748; margin-bottom:8px; text-align:center; }
+  .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; }
+  .cal-header { text-align:center; font-size:10px; font-weight:700; color:#718096; padding:4px 2px; }
+  .cal-header.sat { color:#2b6cb0; }
+  .cal-header.sun { color:#c53030; }
+  .cal-cell { min-height:48px; border:1px solid #e2e8f0; border-radius:4px; padding:3px 4px; background:white; }
+  .cal-cell.empty { border:none; background:transparent; }
+  .cal-cell.sat { background:#f7fbff; }
+  .cal-cell.sun { background:#fff8f8; }
+  .cal-date { font-size:11px; font-weight:600; color:#4a5568; line-height:1.4; }
+  .cal-dot { display:block; font-size:9px; border-radius:3px; padding:1px 3px; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .cal-dot.s { background:#ebf8ff; color:#2b6cb0; }
+  .cal-dot.r { background:#fffaf0; color:#c05621; }
+  .cal-dot.cx { background:#fff5f5; color:#c53030; font-weight:700; }
+  .cal-legend { display:flex; gap:10px; margin-top:8px; flex-wrap:wrap; }
+  .cal-legend span { font-size:11px; display:flex; align-items:center; gap:4px; }
+  .cal-legend .dot { width:10px; height:10px; border-radius:2px; display:inline-block; }
+</style>
+</head>
+<body>
+
+<div class="page-title">福岡SR 問い合わせ分析レポート</div>
+<div class="page-sub">対象期間：2026年4月・5月 ／ OB案件除外 ／ データソース：Kintone＋キャンセル補足情報</div>
+
+<!-- タブボタン -->
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="switchTab('momo')">百々廣久</button>
+  <button class="tab-btn" onclick="switchTab('sakurai')">櫻井睦</button>
+  <button class="tab-btn" onclick="switchTab('total')">合計</button>
+</div>
+
+<!-- ========== 百々廣久 タブ ========== -->
+<div id="tab-momo" class="tab-content active">
+
+  <div class="section">
+    <div class="section-title"><span class="num">1</span>カウンセリング予約・実施件数</div>
+    <div class="table-wrap"><table>
+      <thead>
+        <tr>
+          <th style="text-align:left">区分</th>
+          <th colspan="2">4月</th>
+          <th colspan="2">5月</th>
+        </tr>
+        <tr>
+          <th></th>
+          <th>予約獲得</th><th>うちキャンセル</th>
+          <th>予約獲得</th><th>うちキャンセル</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="label">新築</td>
+          <td><details><summary>7件</summary><ul class="name-list">
+            <li>村上 邦宏様邸</li><li>加嶋 匠様邸</li><li>栗林 拓也様邸</li><li>三角 直輝様邸</li><li>森 未来様邸</li>
+            <li class="cancel-item">江副 恭太様邸</li><li class="cancel-item">杉山 慎悟様邸</li>
+          </ul></details></td>
+          <td><details><summary><span class="rate-zero">2件</span></summary><ul class="name-list">
+            <li class="cancel-item">江副 恭太様邸（4/11）</li><li class="cancel-item">杉山 慎悟様邸（4/13）</li>
+          </ul></details></td>
+          <td><details><summary>8件</summary><ul class="name-list">
+            <li>吉田 雄紀様邸</li><li>大久保 ひろみ様邸</li><li>古長谷 健様邸</li><li>谷口 亜貴子様邸</li><li>真鍋 亮平様邸</li><li>中村 立様邸</li>
+            <li class="cancel-item">山下 洋和様邸</li><li class="cancel-item">伊藤 隆義様邸</li>
+          </ul></details></td>
+          <td><details><summary><span class="rate-zero">2件</span></summary><ul class="name-list">
+            <li class="cancel-item">山下 洋和様邸（5/9）</li><li class="cancel-item">伊藤 隆義様邸（5/14）</li>
+          </ul></details></td>
+        </tr>
+        <tr>
+          <td class="label">リフォーム</td>
+          <td><details><summary>5件</summary><ul class="name-list">
+            <li>池田 哲朗様邸</li><li>李 博盛様邸</li><li>有吉 拓哉様邸</li><li>高山 輝様邸</li><li>平田 亮様邸</li>
+          </ul></details></td>
+          <td>0件</td>
+          <td><details><summary>3件</summary><ul class="name-list">
+            <li>中園 龍治様邸</li><li>前原 港様邸</li><li>江上 大祐様邸</li>
+          </ul></details></td>
+          <td>0件</td>
+        </tr>
+        <tr class="highlight-row">
+          <td class="label">合計</td>
+          <td><strong>12件</strong></td><td><strong class="rate-zero">2件</strong></td>
+          <td><strong>11件</strong></td><td><strong class="rate-zero">2件</strong></td>
+        </tr>
+        <tr class="total-row">
+          <td class="label">実施件数（キャンセル除く）</td>
+          <td colspan="2"><strong>10件</strong></td>
+          <td colspan="2"><strong>9件</strong></td>
+        </tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="num">2</span>プラン依頼率（区分別・月別）</div>
+    <div class="table-wrap s2"><table>
+      <thead>
+        <tr>
+          <th style="text-align:left">区分</th>
+          <th colspan="3">4月</th>
+          <th colspan="3">5月</th>
+          <th colspan="3">4・5月合計</th>
+        </tr>
+        <tr>
+          <th></th>
+          <th>実施数</th><th>依頼数</th><th>依頼率</th>
+          <th>実施数</th><th>依頼数</th><th>依頼率</th>
+          <th>実施数</th><th>依頼数</th><th>依頼率</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="label">新築</td>
+          <td><details><summary>5件</summary><ul class="name-list">
+            <li>村上 邦宏様邸</li><li>加嶋 匠様邸</li><li>栗林 拓也様邸</li><li>三角 直輝様邸</li><li>森 未来様邸</li>
+          </ul></details></td>
+          <td>0件</td><td><span class="rate rate-zero">0%</span></td>
+          <td><details><summary>6件</summary><ul class="name-list">
+            <li class="plan-item">大久保 ひろみ様邸</li><li class="plan-item">谷口 亜貴子様邸</li><li class="plan-item">真鍋 亮平様邸</li>
+            <li>吉田 雄紀様邸</li><li>古長谷 健様邸</li><li>中村 立様邸</li>
+          </ul></details></td>
+          <td>3件</td><td><span class="rate rate-mid">50%</span></td>
+          <td><details><summary>11件</summary><ul class="name-list">
+            <li class="plan-item">大久保 ひろみ様邸</li><li class="plan-item">谷口 亜貴子様邸</li><li class="plan-item">真鍋 亮平様邸</li>
+            <li>村上 邦宏様邸</li><li>加嶋 匠様邸</li><li>栗林 拓也様邸</li><li>三角 直輝様邸</li><li>森 未来様邸</li><li>吉田 雄紀様邸</li><li>古長谷 健様邸</li><li>中村 立様邸</li>
+          </ul></details></td>
+          <td>3件</td><td><span class="rate rate-low">27%</span></td>
+        </tr>
+        <tr>
+          <td class="label">リフォーム</td>
+          <td><details><summary>5件</summary><ul class="name-list">
+            <li class="plan-item">池田 哲朗様邸</li><li class="plan-item">李 博盛様邸</li><li class="plan-item">有吉 拓哉様邸</li><li class="plan-item">高山 輝様邸</li><li class="plan-item">平田 亮様邸</li>
+          </ul></details></td>
+          <td>5件</td><td><span class="rate rate-high">100%</span></td>
+          <td><details><summary>3件</summary><ul class="name-list">
+            <li class="plan-item">中園 龍治様邸</li><li class="plan-item">前原 港様邸</li><li class="plan-item">江上 大祐様邸</li>
+          </ul></details></td>
+          <td>3件</td><td><span class="rate rate-high">100%</span></td>
+          <td><details><summary>8件</summary><ul class="name-list">
+            <li class="plan-item">池田 哲朗様邸</li><li class="plan-item">李 博盛様邸</li><li class="plan-item">有吉 拓哉様邸</li><li class="plan-item">高山 輝様邸</li><li class="plan-item">平田 亮様邸</li>
+            <li class="plan-item">中園 龍治様邸</li><li class="plan-item">前原 港様邸</li><li class="plan-item">江上 大祐様邸</li>
+          </ul></details></td>
+          <td>8件</td><td><span class="rate rate-high">100%</span></td>
+        </tr>
+        <tr class="total-row">
+          <td>合計</td>
+          <td>10件</td><td>5件</td><td><span class="rate">50%</span></td>
+          <td>9件</td><td>6件</td><td><span class="rate rate-mid">67%</span></td>
+          <td>19件</td><td>11件</td><td><span class="rate rate-mid">58%</span></td>
+        </tr>
+      </tbody>
+    </table></div>
+    <div class="insight-box">
+      <div class="insight-title">📌 キャンセルの傾向</div>
+      4月・5月ともにキャンセルは<strong>新築のみ2件ずつ</strong>。リフォームキャンセルはゼロ。<br>
+      新築客は来訪前に離脱するリスクが高く、予約後のフォロー（リマインド・期待値調整）が課題の可能性あり。
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="num">3</span>キャンセル一覧</div>
+    <div class="table-wrap"><table>
+      <thead>
+        <tr><th>キャンセル日</th><th>邸名</th><th>区分</th></tr>
+      </thead>
+      <tbody>
+        <tr class="cancel-row"><td>4/11</td><td>江副 恭太様邸</td><td>新築</td></tr>
+        <tr class="cancel-row"><td>4/13</td><td>杉山 慎悟様邸</td><td>新築</td></tr>
+        <tr class="cancel-row"><td>5/9</td><td>山下 洋和様邸</td><td>新築</td></tr>
+        <tr class="cancel-row"><td>5/14</td><td>伊藤 隆義様邸</td><td>新築</td></tr>
+        <tr class="total-row"><td colspan="2">合計</td><td>4件（全て新築）</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="num">4</span>カウンセリング実施カレンダー</div>
+    <div class="cal-months">
+      <!-- 4月 -->
+      <div class="cal-month">
+        <div class="cal-month-title">2026年 4月</div>
+        <div class="cal-grid">
+          <div class="cal-header">月</div><div class="cal-header">火</div><div class="cal-header">水</div><div class="cal-header">木</div><div class="cal-header">金</div><div class="cal-header sat">土</div><div class="cal-header sun">日</div>
+          <div class="cal-cell empty"></div><div class="cal-cell empty"></div>
+          <div class="cal-cell"><div class="cal-date">1</div></div>
+          <div class="cal-cell"><div class="cal-date">2</div></div>
+          <div class="cal-cell"><div class="cal-date">3</div></div>
+          <div class="cal-cell sat"><div class="cal-date">4</div><span class="cal-dot s">新 村上</span></div>
+          <div class="cal-cell sun"><div class="cal-date">5</div><span class="cal-dot s">新 加嶋</span><span class="cal-dot r">リ池田</span></div>
+          <div class="cal-cell"><div class="cal-date">6</div><span class="cal-dot s">新 栗林</span></div>
+          <div class="cal-cell"><div class="cal-date">7</div></div>
+          <div class="cal-cell"><div class="cal-date">8</div></div>
+          <div class="cal-cell"><div class="cal-date">9</div></div>
+          <div class="cal-cell"><div class="cal-date">10</div><span class="cal-dot r">リ李</span></div>
+          <div class="cal-cell sat"><div class="cal-date">11</div><span class="cal-dot cx">✗ 江副</span></div>
+          <div class="cal-cell sun"><div class="cal-date">12</div><span class="cal-dot r">リ有吉</span></div>
+          <div class="cal-cell"><div class="cal-date">13</div><span class="cal-dot cx">✗ 杉山</span></div>
+          <div class="cal-cell"><div class="cal-date">14</div></div>
+          <div class="cal-cell"><div class="cal-date">15</div></div>
+          <div class="cal-cell"><div class="cal-date">16</div></div>
+          <div class="cal-cell"><div class="cal-date">17</div></div>
+          <div class="cal-cell sat"><div class="cal-date">18</div><span class="cal-dot r">リ高山</span></div>
+          <div class="cal-cell sun"><div class="cal-date">19</div><span class="cal-dot r">リ平田</span></div>
+          <div class="cal-cell"><div class="cal-date">20</div></div>
+          <div class="cal-cell"><div class="cal-date">21</div></div>
+          <div class="cal-cell"><div class="cal-date">22</div></div>
+          <div class="cal-cell"><div class="cal-date">23</div></div>
+          <div class="cal-cell"><div class="cal-date">24</div></div>
+          <div class="cal-cell sat"><div class="cal-date">25</div><span class="cal-dot s">新 三角</span></div>
+          <div class="cal-cell sun"><div class="cal-date">26</div><span class="cal-dot s">新 森</span></div>
+          <div class="cal-cell"><div class="cal-date">27</div></div>
+          <div class="cal-cell"><div class="cal-date">28</div></div>
+          <div class="cal-cell"><div class="cal-date">29</div></div>
+          <div class="cal-cell"><div class="cal-date">30</div></div>
+          <div class="cal-cell empty"></div><div class="cal-cell empty"></div><div class="cal-cell empty"></div>
+        </div>
+      </div>
+      <!-- 5月 -->
+      <div class="cal-month">
+        <div class="cal-month-title">2026年 5月</div>
+        <div class="cal-grid">
+          <div class="cal-header">月</div><div class="cal-header">火</div><div class="cal-header">水</div><div class="cal-header">木</div><div class="cal-header">金</div><div class="cal-header sat">土</div><div class="cal-header sun">日</div>
+          <div class="cal-cell empty"></div><div class="cal-cell empty"></div><div class="cal-cell empty"></div><div class="cal-cell empty"></div>
+          <div class="cal-cell"><div class="cal-date">1</div></div>
+          <div class="cal-cell sat"><div class="cal-date">2</div><span class="cal-dot s">新 吉田</span><span class="cal-dot s">新 大久保</span></div>
+          <div class="cal-cell sun"><div class="cal-date">3</div></div>
+          <div class="cal-cell"><div class="cal-date">4</div></div>
+          <div class="cal-cell"><div class="cal-date">5</div></div>
+          <div class="cal-cell"><div class="cal-date">6</div></div>
+          <div class="cal-cell"><div class="cal-date">7</div></div>
+          <div class="cal-cell"><div class="cal-date">8</div></div>
+          <div class="cal-cell sat"><div class="cal-date">9</div><span class="cal-dot cx">✗ 山下</span></div>
+          <div class="cal-cell sun"><div class="cal-date">10</div><span class="cal-dot s">新 古長谷</span></div>
+          <div class="cal-cell"><div class="cal-date">11</div></div>
+          <div class="cal-cell"><div class="cal-date">12</div></div>
+          <div class="cal-cell"><div class="cal-date">13</div></div>
+          <div class="cal-cell"><div class="cal-date">14</div><span class="cal-dot cx">✗ 伊藤</span></div>
+          <div class="cal-cell"><div class="cal-date">15</div></div>
+          <div class="cal-cell sat"><div class="cal-date">16</div></div>
+          <div class="cal-cell sun"><div class="cal-date">17</div><span class="cal-dot r">リ中園</span><span class="cal-dot s">新 谷口</span></div>
+          <div class="cal-cell"><div class="cal-date">18</div></div>
+          <div class="cal-cell"><div class="cal-date">19</div></div>
+          <div class="cal-cell"><div class="cal-date">20</div></div>
+          <div class="cal-cell"><div class="cal-date">21</div></div>
+          <div class="cal-cell"><div class="cal-date">22</div></div>
+          <div class="cal-cell sat"><div class="cal-date">23</div></div>
+          <div class="cal-cell sun"><div class="cal-date">24</div><span class="cal-dot r">リ前原</span><span class="cal-dot r">リ江上</span></div>
+          <div class="cal-cell"><div class="cal-date">25</div><span class="cal-dot s">新 真鍋</span></div>
+          <div class="cal-cell"><div class="cal-date">26</div></div>
+          <div class="cal-cell"><div class="cal-date">27</div></div>
+          <div class="cal-cell"><div class="cal-date">28</div></div>
+          <div class="cal-cell"><div class="cal-date">29</div></div>
+          <div class="cal-cell sat"><div class="cal-date">30</div></div>
+          <div class="cal-cell sun"><div class="cal-date">31</div><span class="cal-dot s">新 中村</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="cal-legend">
+      <span><span class="dot" style="background:#ebf8ff;border:1px solid #bee3f8;"></span>新築</span>
+      <span><span class="dot" style="background:#fffaf0;border:1px solid #fbd38d;"></span>リフォーム</span>
+      <span><span class="dot" style="background:#fff5f5;border:1px solid #fed7d7;"></span>キャンセル</span>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="num">5</span>新築リリース分析（百々廣久）</div>
+
+    <!-- 予算ギャップ表 -->
+    <p style="font-size:13px;font-weight:700;color:#2d3748;margin-bottom:8px;">■ 予算と実際の規模感のギャップ</p>
+    <div class="table-wrap"><table>
+      <thead>
+        <tr>
+          <th style="text-align:left">邸名</th>
+          <th>客の予算感</th>
+          <th>実際の規模感</th>
+          <th>状況</th>
+          <th style="text-align:left">備考</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td class="label">村上 邦宏様邸</td><td>150〜200万</td><td>400万〜</td><td><span class="rate rate-zero">×2倍</span></td><td style="text-align:left;font-size:12px;">相場観ゼロ。建物FIX済で外構後回し想定</td></tr>
+        <tr><td class="label">加嶋 匠様邸</td><td>180万</td><td>300〜400万</td><td><span class="rate rate-zero">×2倍</span></td><td style="text-align:left;font-size:12px;">一人親方にも相談中</td></tr>
+        <tr><td class="label">三角 直輝様邸</td><td>200万</td><td>500万〜</td><td><span class="rate rate-zero">×2.5倍</span></td><td style="text-align:left;font-size:12px;">GAW・フルフラットタイル等の明確なイメージあり。HMにローン増額相談中</td></tr>
+        <tr><td class="label">森 未来様邸</td><td>300万</td><td>470万〜</td><td><span class="rate rate-mid">×1.5倍</span></td><td style="text-align:left;font-size:12px;">積水から470万プラン既出。結婚式翌日で集中できず</td></tr>
+        <tr><td class="label">古長谷 健様邸</td><td>住宅ローン予算内</td><td>770万（手出し）</td><td><span class="rate rate-zero">全額手出し</span></td><td style="text-align:left;font-size:12px;">建物仕様で予算を使い切り。林業緑化の770万が丸々自腹になるためリリース</td></tr>
+        <tr><td class="label">吉田 雄紀様邸</td><td>320万</td><td>400万〜</td><td><span class="rate rate-mid">×1.25倍</span></td><td style="text-align:left;font-size:12px;">建物配置未定でプラン不可。HM図面待ちで保留扱い</td></tr>
+        <tr><td class="label">中村 立様邸</td><td>—</td><td>—</td><td style="color:#718096;font-size:12px;">時期尚早</td><td style="text-align:left;font-size:12px;">土地未定・1〜2年先の計画。動き出したタイミングで再来店予定</td></tr>
+      </tbody>
+    </table></div>
+
+    <!-- 3パターンカード -->
+    <p style="font-size:13px;font-weight:700;color:#2d3748;margin:20px 0 8px;">■ 離脱パターンの分類</p>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;">
+      <div style="flex:1;min-width:200px;background:#fff5f5;border:1px solid #fed7d7;border-radius:10px;padding:14px;">
+        <div style="font-size:12px;font-weight:700;color:#c53030;margin-bottom:8px;">A. 主導的リリース型（5件）</div>
+        <div style="font-size:12px;color:#2d3748;line-height:1.7;">村上・加嶋・三角・森・古長谷<br>明確な予算ギャップを確認した上で、こちらからリリースを促した案件。「予算アップへの意欲（ローン増額・リフォームローン活用など）が見えない限りプランを書く価値がない」という判断。お客様にとっても11,000円のプラン費を払って絵に描いた餅を見るのは不利益であるため。</div>
+      </div>
+      <div style="flex:1;min-width:200px;background:#fffaf0;border:1px solid #fbd38d;border-radius:10px;padding:14px;">
+        <div style="font-size:12px;font-weight:700;color:#c05621;margin-bottom:8px;">B. タイミング未熟型（2件）</div>
+        <div style="font-size:12px;color:#2d3748;line-height:1.7;">吉田（建物配置未定）・中村（土地未定・1〜2年先）<br>来店時点でカウンセリングを進められる段階にない。1stの見極めが課題。</div>
+      </div>
+      <div style="flex:1;min-width:200px;background:#ebf8ff;border:1px solid #bee3f8;border-radius:10px;padding:14px;">
+        <div style="font-size:12px;font-weight:700;color:#2b6cb0;margin-bottom:8px;">C. 他社プラン比較型（3件）</div>
+        <div style="font-size:12px;color:#2d3748;line-height:1.7;">加嶋（一人親方）・森（積水470万）・古長谷（林業緑化770万）<br>すでに他社が入っており、値下げ交渉の場として来店している可能性。</div>
+      </div>
+    </div>
+
+    <!-- リフォームとの対比 -->
+    <div class="insight-box" style="margin-top:16px;">
+      <div class="insight-title">📌 プラン作成に進む条件と主導的リリースの判断軸</div>
+      カウンセリングで「プランを書く価値」を見極める上で、2つのステップを踏む：<br>
+      <strong>①新たな価値観の共有</strong>――「カエデスタイルとの家づくりで生活が豊かになる」という共通認識が築けるか。他社プランの穴の指摘、過去事例による潜在ニーズ喚起もここに含まれる。<br>
+      <strong>②費用感の折り合い</strong>――価値観が共有できた上で、予算アップの意欲（ローン増額・リフォームローン活用等）が見えるか。「せっかくの家づくりだからこだわりたい」という言葉が出るかどうかが分岐点。<br>
+      この2条件が揃わない場合は、お互いのリソースを守るため主導的にリリースを促す判断をしている。リフォームはこの2条件が揃いやすい客層（具体的な困りごと・リアルな予算感）であり、リリースゼロに直結している。
+    </div>
+  </div>
+
+</div><!-- /tab-momo -->
+
+<!-- ========== 櫻井睦 タブ ========== -->
+<div id="tab-sakurai" class="tab-content">
+
+  <div class="section">
+    <div class="section-title"><span class="num">1</span>カウンセリング予約・実施件数</div>
+    <div class="table-wrap"><table>
+      <thead>
+        <tr>
+          <th style="text-align:left">区分</th>
+          <th colspan="2">4月</th>
+          <th colspan="2">5月</th>
+        </tr>
+        <tr>
+          <th></th>
+          <th>予約獲得</th><th>うちキャンセル</th>
+          <th>予約獲得</th><th>うちキャンセル</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="label">新築</td>
+          <td><details><summary>2件</summary><ul class="name-list">
+            <li>西原 春香様邸</li><li>白土 航太様邸</li>
+          </ul></details></td>
+          <td>0件</td>
+          <td><details><summary>4件</summary><ul class="name-list">
+            <li>川崎 純子様邸</li><li>石橋 隼人様邸</li><li>有薗 良様邸</li>
+            <li class="cancel-item">川上 諒平様邸</li>
+          </ul></details></td>
+          <td><details><summary><span class="rate-zero">1件</span></summary><ul class="name-list">
+            <li class="cancel-item">川上 諒平様邸（5/9）</li>
+          </ul></details></td>
+        </tr>
+        <tr>
+          <td class="label">リフォーム</td>
+          <td><details><summary>6件</summary><ul class="name-list">
+            <li>東 憲吾様邸</li><li>野田 裕佑様邸</li><li>野瀬 祐樹様邸</li><li>世利 紀親様邸</li><li>宮崎 弘悦様邸</li><li>富永 典樹様邸</li>
+          </ul></details></td>
+          <td>0件</td>
+          <td><details><summary>3件</summary><ul class="name-list">
+            <li>松本 優様邸</li><li>梅崎 康平様邸</li>
+            <li class="cancel-item">組坂 俊輔様邸</li>
+          </ul></details></td>
+          <td><details><summary><span class="rate-zero">1件</span></summary><ul class="name-list">
+            <li class="cancel-item">組坂 俊輔様邸（5/30）</li>
+          </ul></details></td>
+        </tr>
+        <tr class="highlight-row">
+          <td class="label">合計</td>
+          <td><strong>8件</strong></td><td><strong>0件</strong></td>
+          <td><strong>7件</strong></td><td><strong class="rate-zero">2件</strong></td>
+        </tr>
+        <tr class="total-row">
+          <td class="label">実施件数（キャンセル除く）</td>
+          <td colspan="2"><strong>8件</strong></td>
+          <td colspan="2"><strong>5件</strong></td>
+        </tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="num">2</span>プラン依頼率（区分別・月別）</div>
+    <div class="table-wrap s2"><table>
+      <thead>
+        <tr>
+          <th style="text-align:left">区分</th>
+          <th colspan="3">4月</th>
+          <th colspan="3">5月</th>
+          <th colspan="3">4・5月合計</th>
+        </tr>
+        <tr>
+          <th></th>
+          <th>実施数</th><th>依頼数</th><th>依頼率</th>
+          <th>実施数</th><th>依頼数</th><th>依頼率</th>
+          <th>実施数</th><th>依頼数</th><th>依頼率</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="label">新築</td>
+          <td><details><summary>2件</summary><ul class="name-list">
+            <li class="plan-item">白土 航太様邸</li><li>西原 春香様邸</li>
+          </ul></details></td>
+          <td>1件</td><td><span class="rate rate-mid">50%</span></td>
+          <td><details><summary>3件</summary><ul class="name-list">
+            <li class="plan-item">川崎 純子様邸</li><li class="plan-item">石橋 隼人様邸</li><li>有薗 良様邸</li>
+          </ul></details></td>
+          <td>2件</td><td><span class="rate rate-mid">67%</span></td>
+          <td><details><summary>5件</summary><ul class="name-list">
+            <li class="plan-item">白土 航太様邸</li><li class="plan-item">川崎 純子様邸</li><li class="plan-item">石橋 隼人様邸</li>
+            <li>西原 春香様邸</li><li>有薗 良様邸</li>
+          </ul></details></td>
+          <td>3件</td><td><span class="rate rate-mid">60%</span></td>
+        </tr>
+        <tr>
+          <td class="label">リフォーム</td>
+          <td><details><summary>6件</summary><ul class="name-list">
+            <li class="plan-item">東 憲吾様邸</li><li class="plan-item">世利 紀親様邸</li><li class="plan-item">宮崎 弘悦様邸</li><li class="plan-item">富永 典樹様邸</li>
+            <li>野田 裕佑様邸</li><li>野瀬 祐樹様邸</li>
+          </ul></details></td>
+          <td>4件</td><td><span class="rate rate-mid">67%</span></td>
+          <td><details><summary>2件</summary><ul class="name-list">
+            <li class="plan-item">松本 優様邸</li><li>梅崎 康平様邸</li>
+          </ul></details></td>
+          <td>1件</td><td><span class="rate rate-mid">50%</span></td>
+          <td><details><summary>8件</summary><ul class="name-list">
+            <li class="plan-item">東 憲吾様邸</li><li class="plan-item">世利 紀親様邸</li><li class="plan-item">宮崎 弘悦様邸</li><li class="plan-item">富永 典樹様邸</li><li class="plan-item">松本 優様邸</li>
+            <li>野田 裕佑様邸</li><li>野瀬 祐樹様邸</li><li>梅崎 康平様邸</li>
+          </ul></details></td>
+          <td>5件</td><td><span class="rate rate-mid">63%</span></td>
+        </tr>
+        <tr class="total-row">
+          <td>合計</td>
+          <td>8件</td><td>5件</td><td><span class="rate rate-mid">63%</span></td>
+          <td>5件</td><td>3件</td><td><span class="rate rate-mid">60%</span></td>
+          <td>13件</td><td>8件</td><td><span class="rate rate-mid">62%</span></td>
+        </tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="num">3</span>キャンセル一覧</div>
+    <div class="table-wrap"><table>
+      <thead>
+        <tr><th>キャンセル日</th><th>邸名</th><th>区分</th></tr>
+      </thead>
+      <tbody>
+        <tr class="cancel-row"><td>5/9</td><td>川上 諒平様邸</td><td>新築</td></tr>
+        <tr class="cancel-row"><td>5/30</td><td>組坂 俊輔様邸</td><td>リフォーム</td></tr>
+        <tr class="total-row"><td colspan="2">合計</td><td>2件</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="num">4</span>カウンセリング実施カレンダー</div>
+    <div class="cal-months">
+      <!-- 4月 -->
+      <div class="cal-month">
+        <div class="cal-month-title">2026年 4月</div>
+        <div class="cal-grid">
+          <div class="cal-header">月</div><div class="cal-header">火</div><div class="cal-header">水</div><div class="cal-header">木</div><div class="cal-header">金</div><div class="cal-header sat">土</div><div class="cal-header sun">日</div>
+          <div class="cal-cell empty"></div><div class="cal-cell empty"></div>
+          <div class="cal-cell"><div class="cal-date">1</div></div>
+          <div class="cal-cell"><div class="cal-date">2</div></div>
+          <div class="cal-cell"><div class="cal-date">3</div></div>
+          <div class="cal-cell sat"><div class="cal-date">4</div><span class="cal-dot r">リ東</span></div>
+          <div class="cal-cell sun"><div class="cal-date">5</div><span class="cal-dot r">リ野田</span></div>
+          <div class="cal-cell"><div class="cal-date">6</div><span class="cal-dot s">新 西原</span></div>
+          <div class="cal-cell"><div class="cal-date">7</div></div>
+          <div class="cal-cell"><div class="cal-date">8</div></div>
+          <div class="cal-cell"><div class="cal-date">9</div></div>
+          <div class="cal-cell"><div class="cal-date">10</div></div>
+          <div class="cal-cell sat"><div class="cal-date">11</div><span class="cal-dot r">リ野瀬*</span></div>
+          <div class="cal-cell sun"><div class="cal-date">12</div><span class="cal-dot r">リ世利</span></div>
+          <div class="cal-cell"><div class="cal-date">13</div></div>
+          <div class="cal-cell"><div class="cal-date">14</div></div>
+          <div class="cal-cell"><div class="cal-date">15</div></div>
+          <div class="cal-cell"><div class="cal-date">16</div></div>
+          <div class="cal-cell"><div class="cal-date">17</div></div>
+          <div class="cal-cell sat"><div class="cal-date">18</div><span class="cal-dot r">リ宮崎</span></div>
+          <div class="cal-cell sun"><div class="cal-date">19</div></div>
+          <div class="cal-cell"><div class="cal-date">20</div></div>
+          <div class="cal-cell"><div class="cal-date">21</div></div>
+          <div class="cal-cell"><div class="cal-date">22</div></div>
+          <div class="cal-cell"><div class="cal-date">23</div></div>
+          <div class="cal-cell"><div class="cal-date">24</div></div>
+          <div class="cal-cell sat"><div class="cal-date">25</div><span class="cal-dot s">新 白土</span><span class="cal-dot r">リ富永</span></div>
+          <div class="cal-cell sun"><div class="cal-date">26</div></div>
+          <div class="cal-cell"><div class="cal-date">27</div></div>
+          <div class="cal-cell"><div class="cal-date">28</div></div>
+          <div class="cal-cell"><div class="cal-date">29</div></div>
+          <div class="cal-cell"><div class="cal-date">30</div></div>
+          <div class="cal-cell empty"></div><div class="cal-cell empty"></div><div class="cal-cell empty"></div>
+        </div>
+        <div style="font-size:10px;color:#a0aec0;margin-top:4px;">* 野瀬様邸はKintone未入力・百々補足</div>
+      </div>
+      <!-- 5月 -->
+      <div class="cal-month">
+        <div class="cal-month-title">2026年 5月</div>
+        <div class="cal-grid">
+          <div class="cal-header">月</div><div class="cal-header">火</div><div class="cal-header">水</div><div class="cal-header">木</div><div class="cal-header">金</div><div class="cal-header sat">土</div><div class="cal-header sun">日</div>
+          <div class="cal-cell empty"></div><div class="cal-cell empty"></div><div class="cal-cell empty"></div><div class="cal-cell empty"></div>
+          <div class="cal-cell"><div class="cal-date">1</div></div>
+          <div class="cal-cell sat"><div class="cal-date">2</div></div>
+          <div class="cal-cell sun"><div class="cal-date">3</div></div>
+          <div class="cal-cell"><div class="cal-date">4</div></div>
+          <div class="cal-cell"><div class="cal-date">5</div></div>
+          <div class="cal-cell"><div class="cal-date">6</div></div>
+          <div class="cal-cell"><div class="cal-date">7</div></div>
+          <div class="cal-cell"><div class="cal-date">8</div></div>
+          <div class="cal-cell sat"><div class="cal-date">9</div><span class="cal-dot cx">✗ 川上</span></div>
+          <div class="cal-cell sun"><div class="cal-date">10</div><span class="cal-dot s">新 川崎</span></div>
+          <div class="cal-cell"><div class="cal-date">11</div></div>
+          <div class="cal-cell"><div class="cal-date">12</div></div>
+          <div class="cal-cell"><div class="cal-date">13</div><span class="cal-dot s">新 石橋</span></div>
+          <div class="cal-cell"><div class="cal-date">14</div></div>
+          <div class="cal-cell"><div class="cal-date">15</div></div>
+          <div class="cal-cell sat"><div class="cal-date">16</div></div>
+          <div class="cal-cell sun"><div class="cal-date">17</div></div>
+          <div class="cal-cell"><div class="cal-date">18</div></div>
+          <div class="cal-cell"><div class="cal-date">19</div></div>
+          <div class="cal-cell"><div class="cal-date">20</div></div>
+          <div class="cal-cell"><div class="cal-date">21</div></div>
+          <div class="cal-cell"><div class="cal-date">22</div></div>
+          <div class="cal-cell sat"><div class="cal-date">23</div><span class="cal-dot r">リ松本</span><span class="cal-dot s">新 有薗</span></div>
+          <div class="cal-cell sun"><div class="cal-date">24</div></div>
+          <div class="cal-cell"><div class="cal-date">25</div></div>
+          <div class="cal-cell"><div class="cal-date">26</div></div>
+          <div class="cal-cell"><div class="cal-date">27</div></div>
+          <div class="cal-cell"><div class="cal-date">28</div></div>
+          <div class="cal-cell"><div class="cal-date">29</div></div>
+          <div class="cal-cell sat"><div class="cal-date">30</div><span class="cal-dot r">リ梅崎</span><span class="cal-dot cx">✗ 組坂</span></div>
+          <div class="cal-cell sun"><div class="cal-date">31</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="cal-legend">
+      <span><span class="dot" style="background:#ebf8ff;border:1px solid #bee3f8;"></span>新築</span>
+      <span><span class="dot" style="background:#fffaf0;border:1px solid #fbd38d;"></span>リフォーム</span>
+      <span><span class="dot" style="background:#fff5f5;border:1px solid #fed7d7;"></span>キャンセル</span>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="num">5</span>リリース・保留分析（櫻井睦）</div>
+    <p style="margin:0 0 12px;color:#555;font-size:0.92em;">カウンセリング実施13件のうち、プラン依頼に至らなかった5件の要因を分析。</p>
+
+    <div class="release-patterns" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;margin-bottom:16px;">
+
+      <div class="pattern-card" style="background:#fff8f0;border:1px solid #fbd38d;border-radius:8px;padding:14px;">
+        <div class="pattern-label" style="font-weight:700;color:#c05621;margin-bottom:8px;">A：予算ギャップ型（2件）</div>
+        <ul style="margin:0;padding-left:1.2em;font-size:0.9em;color:#444;line-height:1.7;">
+          <li><strong>西原 春香様邸（新築・4月）リリース</strong><br>アイ工務店での新築計画。要望プラン400〜500万に対し予算300万以下。難しいとご理解も、ご主人不在でリリース。</li>
+          <li style="margin-top:8px;"><strong>有薗 良様邸（新築・5月）リリース</strong><br>アイ工務店で基礎着工済み（9月引き渡し予定）。土留・深基礎が必要で最低500万かかるが予算200〜300万。予算組みの余地なくリリース。</li>
+        </ul>
+      </div>
+
+      <div class="pattern-card" style="background:#f0fff4;border:1px solid #9ae6b4;border-radius:8px;padding:14px;">
+        <div class="pattern-label" style="font-weight:700;color:#276749;margin-bottom:8px;">C：他社比較型（2件）</div>
+        <ul style="margin:0;padding-left:1.2em;font-size:0.9em;color:#444;line-height:1.7;">
+          <li><strong>野田 裕佑様邸（リフォーム・4月）リリース</strong><br>入居1年ほどのお庭リフォーム検討。資金計画段階で急いでいない。他社にも相談予定があり情報収集がメインのためリリース。</li>
+          <li style="margin-top:8px;"><strong>梅崎 康平様邸（リフォーム・5月）リリース</strong><br>ご両親から引き継いだ家のリフォーム検討。フェンス・砂利敷きのみ。複数社に見積もり依頼中で安さ優先。</li>
+        </ul>
+      </div>
+
+      <div class="pattern-card" style="background:#f7faff;border:1px solid #bee3f8;border-radius:8px;padding:14px;">
+        <div class="pattern-label" style="font-weight:700;color:#2b6cb0;margin-bottom:8px;">D：小規模案件型（1件）</div>
+        <ul style="margin:0;padding-left:1.2em;font-size:0.9em;color:#444;line-height:1.7;">
+          <li><strong>野瀬 祐樹様邸（リフォーム・4月）リリース</strong><br>4年前に1st失注・他社施工済みのお客様。今回は補修・植栽・ライト設置のみの小規模相談。弊社規模感に対して費用負担が重いためリリース。（当時「カーポートをつけられない」と説明があったとのこと）</li>
+        </ul>
+      </div>
+
+    </div>
+
+    <div class="insight-box" style="background:#fffbea;border-left:4px solid #f6ad55;padding:12px 16px;border-radius:4px;">
+      <div style="font-weight:700;color:#744210;margin-bottom:6px;">📌 傾向まとめ</div>
+      <div style="font-size:0.9em;color:#555;line-height:1.75;">
+        新築リリース2件はいずれも<strong>予算ギャップ型</strong>（百々と共通傾向）。リフォームは<strong>「情報収集・比較検討段階」での接触</strong>が多く、カウンセリング時点ではまだ発注意欲が固まっていないケースが目立つ。
+      </div>
+    </div>
+  </div>
+
+</div><!-- /tab-sakurai -->
+
+<!-- ========== 合計 タブ ========== -->
+<div id="tab-total" class="tab-content">
+
+  <div class="section">
+    <div class="section-title"><span class="num">1</span>カウンセリング実施件数（合計）</div>
+    <div class="table-wrap"><table>
+      <thead>
+        <tr>
+          <th style="text-align:left">区分</th>
+          <th colspan="3">4月</th>
+          <th colspan="3">5月</th>
+          <th colspan="3">4・5月合計</th>
+        </tr>
+        <tr>
+          <th></th>
+          <th>百々廣久</th><th>櫻井睦</th><th>計</th>
+          <th>百々廣久</th><th>櫻井睦</th><th>計</th>
+          <th>百々廣久</th><th>櫻井睦</th><th>計</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="label">新築</td>
+          <td>5件</td><td>2件</td><td><strong>7件</strong></td>
+          <td>6件</td><td>3件</td><td><strong>9件</strong></td>
+          <td>11件</td><td>5件</td><td><strong>16件</strong></td>
+        </tr>
+        <tr>
+          <td class="label">リフォーム</td>
+          <td>5件</td><td>6件</td><td><strong>11件</strong></td>
+          <td>3件</td><td>2件</td><td><strong>5件</strong></td>
+          <td>8件</td><td>8件</td><td><strong>16件</strong></td>
+        </tr>
+        <tr class="total-row">
+          <td>合計</td>
+          <td>10件</td><td>8件</td><td><strong>18件</strong></td>
+          <td>9件</td><td>5件</td><td><strong>14件</strong></td>
+          <td>19件</td><td>13件</td><td><strong>32件</strong></td>
+        </tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="num">2</span>プラン依頼率（区分別・月別・合計）</div>
+    <div class="table-wrap s2"><table>
+      <thead>
+        <tr>
+          <th style="text-align:left">区分</th>
+          <th colspan="3">4月</th>
+          <th colspan="3">5月</th>
+          <th colspan="3">4・5月合計</th>
+        </tr>
+        <tr>
+          <th></th>
+          <th>実施数</th><th>依頼数</th><th>依頼率</th>
+          <th>実施数</th><th>依頼数</th><th>依頼率</th>
+          <th>実施数</th><th>依頼数</th><th>依頼率</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="label">新築</td>
+          <td>7件</td><td>1件</td><td><span class="rate rate-zero">14%</span></td>
+          <td>9件</td><td>5件</td><td><span class="rate rate-mid">56%</span></td>
+          <td>16件</td><td>6件</td><td><span class="rate rate-low">38%</span></td>
+        </tr>
+        <tr>
+          <td class="label">リフォーム</td>
+          <td>11件</td><td>9件</td><td><span class="rate rate-high">82%</span></td>
+          <td>5件</td><td>4件</td><td><span class="rate rate-high">80%</span></td>
+          <td>16件</td><td>13件</td><td><span class="rate rate-high">81%</span></td>
+        </tr>
+        <tr class="total-row">
+          <td>合計</td>
+          <td>18件</td><td>10件</td><td><span class="rate rate-mid">56%</span></td>
+          <td>14件</td><td>9件</td><td><span class="rate rate-mid">64%</span></td>
+          <td>32件</td><td>19件</td><td><span class="rate rate-mid">59%</span></td>
+        </tr>
+      </tbody>
+    </table></div>
+    <div class="insight-box">
+      <div class="insight-title">📊 全体の傾向</div>
+      ・<strong>リフォームのプラン依頼率は4月82%・5月80%</strong>と高水準を維持。<br>
+      ・<strong>新築は4月14%・5月56%</strong>と月によって大きくぶれている。4月は特に低く、原因分析が必要。<br>
+      ・5月は全体的に改善傾向（56%→64%）。
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="num">3</span>百々廣久 vs 櫻井睦 ― 共通点と違い</div>
+    <p style="margin:0 0 12px;color:#555;font-size:0.92em;">リリース・保留分析を踏まえた2名の傾向比較。</p>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+
+      <div style="background:#fff8f0;border:1px solid #fbd38d;border-radius:8px;padding:14px;">
+        <div style="font-weight:700;color:#c05621;margin-bottom:10px;">🔶 共通点</div>
+        <ul style="margin:0;padding-left:1.2em;font-size:0.9em;color:#444;line-height:1.8;">
+          <li><strong>新築の主導的リリースが共通</strong><br>明確な予算ギャップ＋予算アップ意欲なしと判断した案件は、こちらからリリースを促している。お客様のリソース（プラン費11,000円）と自社リソースの両方を守る判断。</li>
+          <li><strong>キャンセルは全て新築</strong><br>百々4件・櫻井2件、リフォームキャンセルはゼロ。新築客は来訪前に離脱しやすい。</li>
+          <li><strong>リフォームのプラン依頼率は高水準</strong><br>百々100%・櫻井63〜67%。リフォームは予算感が合いやすく成約しやすい。</li>
+        </ul>
+      </div>
+
+      <div style="background:#f0f7ff;border:1px solid #bee3f8;border-radius:8px;padding:14px;">
+        <div style="font-weight:700;color:#2b6cb0;margin-bottom:10px;">🔷 違い</div>
+        <ul style="margin:0;padding-left:1.2em;font-size:0.9em;color:#444;line-height:1.8;">
+          <li><strong>新築依頼率のぶれ幅</strong><br>百々：4月0% → 5月60%（落差大）<br>櫻井：4月50% → 5月67%（安定）<br>百々の4月は主導的リリースが集中した月。</li>
+          <li><strong>リリース理由の多様性</strong><br>百々：予算ギャップ型（主導的リリース）に集中（A型5件）<br>櫻井：予算ギャップ2件＋他社比較2件＋小規模案件1件と分散。</li>
+          <li><strong>リフォーム客層の違い</strong><br>百々：具体的なプラン意識が高い客層<br>櫻井：情報収集・比較検討段階での接触が多い。カウンセリング時点で発注意欲が固まっていないケースが目立つ。</li>
+        </ul>
+      </div>
+
+    </div>
+
+    <div class="insight-box" style="background:#f0fff4;border-left:4px solid #68d391;padding:12px 16px;border-radius:4px;">
+      <div style="font-weight:700;color:#276749;margin-bottom:6px;">📌 示唆</div>
+      <div style="font-size:0.9em;color:#555;line-height:1.75;">
+        <strong>新築の主導的リリース</strong>は「価値観共有×費用折り合い」の2条件未達が判断軸。百々の4月0%は主導的リリースが集中した結果であり、5月の60%回復は価値観共有に成功したケースの増加を示す。<br>
+        <strong>リフォームの他社比較対策</strong>（C型）は、初回接触時にカエデスタイルの差別化ポイントを早期に伝える工夫が必要。<br>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /tab-total -->
+
+<script>
+function switchTab(name) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  event.target.classList.add('active');
+  closeAllPopups();
+}
+
+var _activePopup = null;
+
+function closeAllPopups() {
+  document.querySelectorAll('.name-list.visible').forEach(el => el.classList.remove('visible'));
+  document.querySelectorAll('details[open]').forEach(el => el.removeAttribute('open'));
+  _activePopup = null;
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('details').forEach(function(det) {
+    det.addEventListener('toggle', function(e) {
+      if (det.open) {
+        closeAllPopups();
+        var list = det.querySelector('.name-list');
+        if (list) {
+          var rect = det.querySelector('summary').getBoundingClientRect();
+          list.style.top = (rect.bottom + 4) + 'px';
+          list.style.left = rect.left + 'px';
+          list.classList.add('visible');
+          det.setAttribute('open', '');
+          _activePopup = det;
+        }
+      } else {
+        var list = det.querySelector('.name-list');
+        if (list) list.classList.remove('visible');
+        _activePopup = null;
+      }
+    });
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target.closest('details')) {
+      closeAllPopups();
+    }
+  });
+});
+</script>
+</body>
+</html>
