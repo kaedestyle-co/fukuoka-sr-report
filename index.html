@@ -663,88 +663,90 @@
 <div id="tab-total" class="tab-content">
 
   <div class="section">
-    <div class="section-title"><span class="num">1</span>カウンセリング実施件数（合計）</div>
+    <div class="section-title"><span class="num">①②</span>実施件数 × プラン依頼率（担当別・月別）</div>
     <div class="table-wrap"><table>
       <thead>
         <tr>
-          <th style="text-align:left">区分</th>
-          <th colspan="3">4月</th>
-          <th colspan="3">5月</th>
-          <th colspan="3">4・5月合計</th>
+          <th rowspan="2" style="text-align:left">区分</th>
+          <th rowspan="2">担当</th>
+          <th colspan="2">4月</th>
+          <th colspan="2">5月</th>
+          <th colspan="2">4・5月累計</th>
         </tr>
         <tr>
-          <th></th>
-          <th>百々廣久</th><th>櫻井睦</th><th>計</th>
-          <th>百々廣久</th><th>櫻井睦</th><th>計</th>
-          <th>百々廣久</th><th>櫻井睦</th><th>計</th>
+          <th>実施</th><th>依頼率</th>
+          <th>実施</th><th>依頼率</th>
+          <th>実施</th><th>依頼率</th>
         </tr>
       </thead>
       <tbody>
+        <!-- 新築 -->
         <tr>
-          <td class="label">新築</td>
-          <td>5件</td><td>2件</td><td><strong>7件</strong></td>
-          <td>6件</td><td>3件</td><td><strong>9件</strong></td>
-          <td>11件</td><td>5件</td><td><strong>16件</strong></td>
+          <td class="label" rowspan="3">新築</td>
+          <td class="label">百々廣久</td>
+          <td>5件</td><td><span class="rate rate-zero">0%</span></td>
+          <td>5件</td><td><span class="rate rate-mid">60%</span></td>
+          <td>10件</td><td><span class="rate rate-low">30%</span></td>
         </tr>
         <tr>
-          <td class="label">リフォーム</td>
-          <td>5件</td><td>6件</td><td><strong>11件</strong></td>
-          <td>3件</td><td>2件</td><td><strong>5件</strong></td>
-          <td>8件</td><td>8件</td><td><strong>16件</strong></td>
+          <td class="label">櫻井睦</td>
+          <td>2件</td><td><span class="rate rate-mid">50%</span></td>
+          <td>3件</td><td><span class="rate rate-mid">67%</span></td>
+          <td>5件</td><td><span class="rate rate-mid">60%</span></td>
         </tr>
         <tr class="total-row">
-          <td>合計</td>
-          <td>10件</td><td>8件</td><td><strong>18件</strong></td>
-          <td>9件</td><td>5件</td><td><strong>14件</strong></td>
-          <td>19件</td><td>13件</td><td><strong>32件</strong></td>
+          <td>計</td>
+          <td>7件</td><td><span class="rate rate-zero">14%</span></td>
+          <td>8件</td><td><span class="rate rate-mid">63%</span></td>
+          <td>15件</td><td><span class="rate rate-low">40%</span></td>
         </tr>
-      </tbody>
-    </table></div>
-  </div>
-
-  <div class="section">
-    <div class="section-title"><span class="num">2</span>プラン依頼率（区分別・月別・合計）</div>
-    <div class="table-wrap s2"><table>
-      <thead>
+        <!-- リフォーム -->
         <tr>
-          <th style="text-align:left">区分</th>
-          <th colspan="3">4月</th>
-          <th colspan="3">5月</th>
-          <th colspan="3">4・5月合計</th>
+          <td class="label" rowspan="3">リフォーム</td>
+          <td class="label">百々廣久</td>
+          <td>5件</td><td><span class="rate rate-high">100%</span></td>
+          <td>3件</td><td><span class="rate rate-high">100%</span></td>
+          <td>8件</td><td><span class="rate rate-high">100%</span></td>
         </tr>
         <tr>
-          <th></th>
-          <th>実施数</th><th>依頼数</th><th>依頼率</th>
-          <th>実施数</th><th>依頼数</th><th>依頼率</th>
-          <th>実施数</th><th>依頼数</th><th>依頼率</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td class="label">新築</td>
-          <td>7件</td><td>1件</td><td><span class="rate rate-zero">14%</span></td>
-          <td>9件</td><td>5件</td><td><span class="rate rate-mid">56%</span></td>
-          <td>16件</td><td>6件</td><td><span class="rate rate-low">38%</span></td>
-        </tr>
-        <tr>
-          <td class="label">リフォーム</td>
-          <td>11件</td><td>9件</td><td><span class="rate rate-high">82%</span></td>
-          <td>5件</td><td>4件</td><td><span class="rate rate-high">80%</span></td>
-          <td>16件</td><td>13件</td><td><span class="rate rate-high">81%</span></td>
+          <td class="label">櫻井睦</td>
+          <td>6件</td><td><span class="rate rate-mid">67%</span></td>
+          <td>2件</td><td><span class="rate rate-mid">50%</span></td>
+          <td>8件</td><td><span class="rate rate-mid">63%</span></td>
         </tr>
         <tr class="total-row">
-          <td>合計</td>
-          <td>18件</td><td>10件</td><td><span class="rate rate-mid">56%</span></td>
-          <td>14件</td><td>9件</td><td><span class="rate rate-mid">64%</span></td>
-          <td>32件</td><td>19件</td><td><span class="rate rate-mid">59%</span></td>
+          <td>計</td>
+          <td>11件</td><td><span class="rate rate-high">82%</span></td>
+          <td>5件</td><td><span class="rate rate-high">80%</span></td>
+          <td>16件</td><td><span class="rate rate-high">81%</span></td>
+        </tr>
+        <!-- 合計 -->
+        <tr class="highlight-row">
+          <td class="label" rowspan="3" style="font-weight:700;color:#2d3748">合計</td>
+          <td class="label">百々廣久</td>
+          <td>10件</td><td><span class="rate rate-mid">50%</span></td>
+          <td>8件</td><td><span class="rate rate-high">75%</span></td>
+          <td>18件</td><td><span class="rate rate-mid">61%</span></td>
+        </tr>
+        <tr class="highlight-row">
+          <td class="label">櫻井睦</td>
+          <td>8件</td><td><span class="rate rate-mid">63%</span></td>
+          <td>5件</td><td><span class="rate rate-mid">60%</span></td>
+          <td>13件</td><td><span class="rate rate-mid">62%</span></td>
+        </tr>
+        <tr class="total-row">
+          <td>計</td>
+          <td>18件</td><td><span class="rate rate-mid">56%</span></td>
+          <td>13件</td><td><span class="rate rate-mid">69%</span></td>
+          <td>31件</td><td><span class="rate rate-mid">61%</span></td>
         </tr>
       </tbody>
     </table></div>
     <div class="insight-box">
       <div class="insight-title">📊 全体の傾向</div>
       ・<strong>リフォームのプラン依頼率は4月82%・5月80%</strong>と高水準を維持。<br>
-      ・<strong>新築は4月14%・5月56%</strong>と月によって大きくぶれている。4月は特に低く、原因分析が必要。<br>
-      ・5月は全体的に改善傾向（56%→64%）。
+      ・<strong>新築は4月14%・5月63%</strong>と月によって大きくぶれている。4月は特に低く、原因分析が必要。<br>
+      ・5月は全体的に改善傾向（56%→69%）。
     </div>
   </div>
 
